@@ -17,7 +17,7 @@
     if (meta) meta.setAttribute('content', theme === 'dark' ? '#121212' : '#3f51b5');
   })();
 </script>
-<title>Memorama · Edición Profesional</title>
+<title>Memorama</title>
 <style>
   :root {
     color-scheme: light;
@@ -421,7 +421,6 @@
   <aside class="sidebar">
     <header>
       <h1>Memorama</h1>
-      <div class="subtitle">Edición Profesional</div>
     </header>
     <section class="side-section">
       <div class="side-label">Estadísticas</div>
@@ -438,6 +437,8 @@
         <button class="diff-btn active" data-level="easy">Fácil · 8</button>
         <button class="diff-btn" data-level="medium">Medio · 12</button>
         <button class="diff-btn" data-level="hard">Difícil · 16</button>
+        <button class="diff-btn" data-level="veryhard">Muy difícil · 20</button>
+        <button class="diff-btn" data-level="extreme">Extremo · 30</button>
       </div>
     </section>
     <div class="message" id="message"></div>
@@ -487,9 +488,11 @@
   ];
 
   const LEVELS = {
-    easy:   { pairs: 8,  cols: 4 },
-    medium: { pairs: 12, cols: 4 },
-    hard:   { pairs: 16, cols: 4 }
+    easy:     { pairs: 8,  cols: 4 },
+    medium:   { pairs: 12, cols: 4 },
+    hard:     { pairs: 16, cols: 4 },
+    veryhard: { pairs: 20, cols: 5 },
+    extreme:  { pairs: 30, cols: 10 }
   };
 
   const state = {
@@ -571,7 +574,8 @@
 
   const preloaded = new Map();
   function buildDeck(pairCount) {
-    const picked = shuffle(IMAGES).slice(0, pairCount);
+    const limit = Math.min(pairCount, IMAGES.length);
+    const picked = shuffle(IMAGES).slice(0, limit);
     const deck = [];
     preloaded.clear();
     picked.forEach(src => {
@@ -649,21 +653,34 @@
     if (mqWide.matches) {
       const availH = wrap.clientHeight;
       if (!availH) return;
-      let best = null;
-      for (let c = 2; c <= total; c++) {
-        if (total % c !== 0) continue;
-        const rows = total / c;
+      if (state.level === 'extreme') {
+        const rows = 6;
+        const c = 10;
         const s = Math.min(
           (availW - gap * (c - 1)) / c,
           (availH - gap * (rows - 1)) / rows
         );
-        if (s < 24) continue;
-        if (!best || s > best.size + 0.5 ||
-            (Math.abs(s - best.size) <= 0.5 && rows <= c && best.rows > best.cols)) {
-          best = { size: s, cols: c, rows };
+        if (s >= 24) {
+          cols = c;
+          size = Math.floor(s);
         }
+      } else {
+        let best = null;
+        for (let c = 2; c <= total; c++) {
+          if (total % c !== 0) continue;
+          const rows = total / c;
+          const s = Math.min(
+            (availW - gap * (c - 1)) / c,
+            (availH - gap * (rows - 1)) / rows
+          );
+          if (s < 24) continue;
+          if (!best || s > best.size + 0.5 ||
+              (Math.abs(s - best.size) <= 0.5 && rows <= c && best.rows > best.cols)) {
+            best = { size: s, cols: c, rows };
+          }
+        }
+        if (best) { cols = best.cols; size = best.size; }
       }
-      if (best) { cols = best.cols; size = best.size; }
     }
 
     if (!size) size = (availW - gap * 3) / 4;
